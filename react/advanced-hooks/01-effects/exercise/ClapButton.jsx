@@ -1,68 +1,38 @@
-import { Component, useState, useEffect } from 'react'
-import debounce from 'lodash.debounce'
+import React, { useEffect, useState } from 'react'
 import { saveClapsToDatabase } from './utils'
 
-export class ClapButton extends Component {
-  constructor(props) {
-    super(props)
-    this.state = {
-      claps: 0,
-      queueClaps: 0,
+export const ClapButton = () => {
+  const [claps, setClaps] = useState(0)
+  const [queueClaps, setQueueClaps] = useState(0)
+
+  function clap() {
+    setQueueClaps(queueClaps + 1)
+  }
+
+  useEffect(() => {
+    if (queueClaps > 0) {
+      const timeoutId = setTimeout(() => {
+        saveClapsToDatabase(queueClaps).then((latestClaps) => {
+          // When this promise resolves, it gives you the most recent latest
+          // claps from the database
+          setQueueClaps(0)
+          setClaps(latestClaps)
+        })
+      }, 1000)
+      return () => clearTimeout(timeoutId)
     }
-    this.saveClaps = debounce(this.saveClaps, 1000)
-  }
+  }, [queueClaps])
 
-  saveClaps = () => {
-    saveClapsToDatabase(this.state.queueClaps).then((latestClaps) => {
-      this.setState({
-        claps: latestClaps,
-        queueClaps: 0,
-      })
-    })
-  }
-
-  clap = () => {
-    this.setState((state) => {
-      return { queueClaps: state.queueClaps + 1 }
-    })
-    this.saveClaps()
-  }
-
-  render() {
-    return (
-      <div className="text-center spacing">
-        <button onClick={this.clap} className="button">
-          Clap
-        </button>
-        <hr />
-        <div className="horizontal-spacing">
-          <span>Queue Claps: {this.state.queueClaps}</span>
-          <span>Claps: {this.state.claps}</span>
-        </div>
+  return (
+    <div className="text-center spacing">
+      <button onClick={clap} className="button">
+        Clap
+      </button>
+      <hr />
+      <div className="horizontal-spacing">
+        <span>Queue Claps: {queueClaps}</span>
+        <span>Claps: {claps}</span>
       </div>
-    )
-  }
+    </div>
+  )
 }
-
-// If you want to start from a function component instead of refactoring:
-
-// function ClapButton() {
-//   const [claps, setClaps] = useState(0)
-//   const [queueClaps, setQueueClaps] = useState(0)
-
-//   function clap() {
-//   }
-
-//   return (
-//     <div className="text-center spacing">
-//       <button onClick={clap} className="button">
-//         Clap
-//       </button>
-//       <hr />
-//       <div className="horizontal-spacing">
-//         <span>Queue Claps: {queueClaps}</span>
-//         <span>Claps: {claps}</span>
-//       </div>
-//     </div>
-//   )
-// }
